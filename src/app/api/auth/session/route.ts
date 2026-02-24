@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "edge";
 import { verifyToken, getUserById } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {

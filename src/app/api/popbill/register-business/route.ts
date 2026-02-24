@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const runtime = "edge";
 import { verifyToken, getUserById, updateUser } from "@/lib/auth";
 
 function getPopbill() {

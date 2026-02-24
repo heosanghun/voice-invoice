@@ -4,6 +4,8 @@
  */
 import { NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 export async function GET() {
   const hasLinkId = !!process.env.POPBILL_LINKID;
   const hasSecretKey = !!process.env.POPBILL_SECRET_KEY;
