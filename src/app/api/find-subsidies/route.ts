@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
-export const runtime = "edge";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { BusinessProfile } from "@/types/subsidy";
 import type { SubsidyMatch } from "@/types/subsidy";

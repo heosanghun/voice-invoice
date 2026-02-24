@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
-export const runtime = "edge";
 import {
   createUser,
   createToken,

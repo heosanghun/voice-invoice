@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
-export const runtime = "edge";
 import { verifyUser, createToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {

@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
-export const runtime = "edge";
 import type { InvoiceData } from "@/types/invoice";
 import { verifyToken, getUserById } from "@/lib/auth";
 
