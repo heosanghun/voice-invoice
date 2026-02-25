@@ -78,7 +78,14 @@ export default function SettingsPage() {
         body: JSON.stringify(form),
       });
       const data = await res.json().catch(() => ({ error: "응답을 읽을 수 없습니다." }));
-      if (!res.ok) throw new Error(data.error || "등록 실패");
+      if (!res.ok) {
+        const msg = data.error || "등록 실패";
+        if (res.status === 401 && msg.includes("로그인"))
+          throw new Error(
+            "로그인 세션이 없거나 만료되었습니다. 로그아웃 후 다시 로그인한 뒤, 같은 주소(URL)에서 사업자 등록을 시도해 주세요. 프로덕션 주소(voice-invoice-hyo4.vercel.app) 사용을 권장합니다."
+          );
+        throw new Error(msg);
+      }
       setMessage({ type: "success", text: data.message });
       await refresh();
       const statusRes = await fetch("/api/popbill/status", { credentials: "include" });
