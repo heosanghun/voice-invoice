@@ -56,6 +56,11 @@ export default function SettingsPage() {
     }
   }, [user, popbillStatus?.popbillConfigured]);
 
+  // 환경변수만 로드돼도 폼 사용 가능 (status가 아직 false여도 check-env 성공 시 폼 표시)
+  const formEnabled = !!(
+    popbillStatus?.popbillConfigured || envCheck?.ok === true
+  );
+
   const handleRegisterBusiness = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -151,7 +156,7 @@ export default function SettingsPage() {
           <p className="text-slate-600">{user.name}</p>
         </div>
 
-        {!popbillStatus?.popbillConfigured && (
+        {!formEnabled && (
           <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-6">
             <h3 className="mb-3 font-semibold text-amber-800">
               Step 0: 팝빌 API 키 설정 (가장 먼저 해야 할 일)
@@ -242,18 +247,18 @@ POPBILL_IS_TEST=true`}
         {!popbillStatus?.popbillRegistered && (
           <div
             className={`mb-8 rounded-xl border-2 p-6 ${
-              popbillStatus?.popbillConfigured
+              formEnabled
                 ? "border-blue-200 bg-blue-50/50"
                 : "border-slate-200 bg-slate-50 opacity-90"
             }`}
           >
             <h3 className="mb-2 font-semibold text-slate-800">
-              {popbillStatus?.popbillConfigured
+              {formEnabled
                 ? "↓ 1단계: 아래 폼에 사업자 정보를 입력한 뒤 [사업자 등록] 버튼을 클릭하세요"
                 : "1단계: 사업자 정보 등록 (API 키 설정 후 사용 가능)"}
             </h3>
             <p className="mb-4 text-sm text-slate-600">
-              {popbillStatus?.popbillConfigured
+              {formEnabled
                 ? "팝빌 연동회원으로 자동 가입됩니다."
                 : "위 Step 0에서 .env.local에 POPBILL_LINKID, POPBILL_SECRET_KEY를 설정하고 서버를 재시작하면 이 폼을 사용할 수 있습니다."}
             </p>
@@ -386,12 +391,12 @@ POPBILL_IS_TEST=true`}
               </div>
               <button
                 type="submit"
-                disabled={submitLoading || !popbillStatus?.popbillConfigured}
+                disabled={submitLoading || !formEnabled}
                 className="w-full rounded-lg bg-blue-600 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {submitLoading
                   ? "등록 중..."
-                  : popbillStatus?.popbillConfigured
+                  : formEnabled
                     ? "사업자 등록"
                     : "API 키 설정 후 사용 가능"}
               </button>
