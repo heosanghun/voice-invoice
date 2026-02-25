@@ -96,7 +96,7 @@ export default function SettingsPage() {
             );
           if (msg.includes("로그인"))
             throw new Error(
-              "로그인 세션이 없거나 만료되었습니다. 로그아웃 후 같은 주소에서 다시 로그인하세요."
+              "로그인 세션이 없거나 만료되었습니다. 프로덕션 주소(https://voice-invoice-hyo4.vercel.app)에서 로그아웃 후 다시 로그인한 뒤 사업자 등록을 시도하세요. 지금 프리뷰 주소라면 해당 주소에서는 쿠키가 공유되지 않습니다."
             );
         }
         throw new Error(msg);
@@ -145,8 +145,26 @@ export default function SettingsPage() {
     );
   }
 
+  const isPreviewUrl =
+    typeof window !== "undefined" &&
+    /voice-invoice-hyo4-[a-z0-9]+-/.test(window.location.hostname);
+  const productionUrl = "https://voice-invoice-hyo4.vercel.app";
+
   return (
     <div className="min-h-screen bg-slate-50">
+      {isPreviewUrl && (
+        <div className="mx-auto max-w-4xl px-6 py-3">
+          <div className="rounded-lg border-2 border-amber-400 bg-amber-50 p-4 text-amber-900">
+            <p className="font-semibold">⚠️ 현재 프리뷰 주소입니다. 사업자 등록은 동작하지 않을 수 있습니다.</p>
+            <p className="mt-1 text-sm">
+              <a href={productionUrl} className="underline font-medium">
+                프로덕션 주소({productionUrl})
+              </a>
+              로 이동한 뒤, 로그아웃 → 로그인 → 설정에서 사업자 등록을 시도하세요.
+            </p>
+          </div>
+        </div>
+      )}
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-6">
           <h1 className="text-xl font-semibold text-slate-800">설정</h1>
