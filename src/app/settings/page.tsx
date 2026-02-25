@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [certLoading, setCertLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -56,6 +57,10 @@ export default function SettingsPage() {
     }
   }, [user, popbillStatus?.popbillConfigured]);
 
+  useEffect(() => {
+    if (message) messageRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [message]);
+
   // 환경변수만 로드돼도 폼 사용 가능 (status가 아직 false여도 check-env 성공 시 폼 표시)
   const formEnabled = !!(
     popbillStatus?.popbillConfigured || envCheck?.ok === true
@@ -69,13 +74,14 @@ export default function SettingsPage() {
       const res = await fetch("/api/popbill/register-business", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(form),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ error: "응답을 읽을 수 없습니다." }));
       if (!res.ok) throw new Error(data.error || "등록 실패");
       setMessage({ type: "success", text: data.message });
       await refresh();
-      const statusRes = await fetch("/api/popbill/status");
+      const statusRes = await fetch("/api/popbill/status", { credentials: "include" });
       setPopbillStatus(await statusRes.json());
     } catch (err) {
       setMessage({
@@ -450,9 +456,11 @@ POPBILL_IS_TEST=true`}
 
         {message && (
           <div
+            ref={messageRef}
             className={`mt-4 rounded-lg p-4 ${
               message.type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
             }`}
+            role="alert"
           >
             {message.text}
           </div>
