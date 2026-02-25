@@ -112,7 +112,17 @@ Supabase를 쓰려면 **코드 추가**가 먼저 필요합니다. 적용 가능
 
 4. **Supabase 대시보드**  
    - 프로젝트 URL: **Settings → API** 에서 확인.  
-   - Access Token / anon key: 같은 메뉴에서 확인 후, 코드에서 쓰는 키와 이름을 맞추기.
+   - **키는 반드시 "Project API keys"의 anon (public) 또는 service_role 키를 사용.**  
+   - `sbp_xxx` 형태의 **Personal Access Token은 DB 접근용이 아니므로 사용하지 말 것.**  
+   - "Invalid API key" 오류가 나면 → Vercel/로컬 env에서 **SUPABASE_ACCESS_TOKEN** 값을 Supabase **Dashboard → Project Settings → API → anon public** 키로 교체.
+
+### 4-4. "Invalid API key"가 나올 때
+
+- 회원가입/로그인 시 **Invalid API key**가 뜨면, Supabase에 넣은 키가 잘못된 경우입니다.
+- **해결:** Supabase 대시보드 → **Project Settings** → **API** → **Project API keys**에서  
+  - **anon public** 키를 복사해  
+  - Vercel(및 로컬 `.env`)의 **SUPABASE_ACCESS_TOKEN** 값으로 넣고 저장 후 재배포.
+- 키를 수정하기 전까지는, 코드에서 **Supabase 오류 시 자동으로 파일 저장소로 폴백**하므로 회원가입·로그인은 동작합니다 (데이터는 Vercel에서는 `/tmp`, 로컬에서는 `data/users.json`).
 
 ---
 

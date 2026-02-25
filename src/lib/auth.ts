@@ -71,6 +71,10 @@ function rowToUser(r: UserRow): User {
   };
 }
 
+function isSupabaseKeyError(msg: string): boolean {
+  return /invalid|api key|jwt|401|403|unauthorized/i.test(msg);
+}
+
 function userToRow(u: Partial<User>): Record<string, unknown> {
   const r: Record<string, unknown> = {};
   if (u.id != null) r.id = u.id;
@@ -131,22 +135,29 @@ export async function createUser(
   const emailLower = email.toLowerCase();
 
   if (sb) {
-    const { data: existing } = await sb
-      .from(USERS_TABLE)
-      .select("id")
-      .ilike("email", emailLower)
-      .maybeSingle();
-    if (existing) throw new Error("이미 가입된 이메일입니다.");
-    const row = {
-      id,
-      email: emailLower,
-      password_hash: passwordHash,
-      name,
-      created_at: new Date().toISOString(),
-    };
-    const { error } = await sb.from(USERS_TABLE).insert(row);
-    if (error) throw new Error(error.message);
-    return { id, email: emailLower, name, createdAt: row.created_at } as User;
+    try {
+      const { data: existing } = await sb
+        .from(USERS_TABLE)
+        .select("id")
+        .ilike("email", emailLower)
+        .maybeSingle();
+      if (existing) throw new Error("이미 가입된 이메일입니다.");
+      const row = {
+        id,
+        email: emailLower,
+        password_hash: passwordHash,
+        name,
+        created_at: new Date().toISOString(),
+      };
+      const { error } = await sb.from(USERS_TABLE).insert(row);
+      if (error) throw new Error(error.message);
+      return { id, email: emailLower, name, createdAt: row.created_at } as User;
+    } catch (supabaseErr) {
+      const msg = supabaseErr instanceof Error ? supabaseErr.message : "";
+      if (isSupabaseKeyError(msg))
+        console.warn("[auth] Supabase 키 오류, 파일 저장소로 폴백:", msg);
+      else throw supabaseErr;
+    }
   }
 
   const users = await readUsersFile();
@@ -173,17 +184,24 @@ export async function verifyUser(
   const emailLower = email.toLowerCase();
 
   if (sb) {
-    const { data: row, error } = await sb
-      .from(USERS_TABLE)
-      .select("*")
-      .ilike("email", emailLower)
-      .maybeSingle();
-    if (error || !row) return null;
-    const user = rowToUser(row as UserRow);
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return null;
-    const { passwordHash: _, ...safe } = user;
-    return safe as User;
+    try {
+      const { data: row, error } = await sb
+        .from(USERS_TABLE)
+        .select("*")
+        .ilike("email", emailLower)
+        .maybeSingle();
+      if (error && isSupabaseKeyError(error.message)) throw new Error(error.message);
+      if (error || !row) return null;
+      const user = rowToUser(row as UserRow);
+      const ok = await bcrypt.compare(password, user.passwordHash);
+      if (!ok) return null;
+      const { passwordHash: _, ...safe } = user;
+      return safe as User;
+    } catch (e) {
+      if (e instanceof Error && isSupabaseKeyError(e.message)) {
+        console.warn("[auth] Supabase 키 오류, 파일 저장소로 폴백:", e.message);
+      } else throw e;
+    }
   }
 
   const users = await readUsersFile();
@@ -199,15 +217,22 @@ export async function getUserById(id: string): Promise<User | null> {
   const sb = getSupabase();
 
   if (sb) {
-    const { data: row, error } = await sb
-      .from(USERS_TABLE)
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-    if (error || !row) return null;
-    const user = rowToUser(row as UserRow);
-    const { passwordHash: _, ...safe } = user;
-    return safe as User;
+    try {
+      const { data: row, error } = await sb
+        .from(USERS_TABLE)
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (error && isSupabaseKeyError(error.message)) throw new Error(error.message);
+      if (error || !row) return null;
+      const user = rowToUser(row as UserRow);
+      const { passwordHash: _, ...safe } = user;
+      return safe as User;
+    } catch (e) {
+      if (e instanceof Error && isSupabaseKeyError(e.message)) {
+        console.warn("[auth] Supabase 키 오류, 파일 저장소로 폴백:", e.message);
+      } else throw e;
+    }
   }
 
   const users = await readUsersFile();
@@ -224,11 +249,20 @@ export async function updateUser(
   const sb = getSupabase();
 
   if (sb) {
-    const row = userToRow(updates);
-    if (Object.keys(row).length === 0) return getUserById(id);
-    const { error } = await sb.from(USERS_TABLE).update(row).eq("id", id);
-    if (error) throw new Error(error.message);
-    return getUserById(id);
+    try {
+      const row = userToRow(updates);
+      if (Object.keys(row).length === 0) return getUserById(id);
+      const { error } = await sb.from(USERS_TABLE).update(row).eq("id", id);
+      if (error) {
+        if (isSupabaseKeyError(error.message)) throw new Error(error.message);
+        throw new Error(error.message);
+      }
+      return getUserById(id);
+    } catch (e) {
+      if (e instanceof Error && isSupabaseKeyError(e.message)) {
+        console.warn("[auth] Supabase 키 오류, 파일 저장소로 폴백:", e.message);
+      } else throw e;
+    }
   }
 
   const users = await readUsersFile();
