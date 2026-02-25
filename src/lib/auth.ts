@@ -28,7 +28,11 @@ export interface User {
   certRegistered?: boolean;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
+// Vercel(서버리스)에서는 배포 디렉터리(/var/task)에 쓰기 불가 → /tmp 사용 (휘발성)
+const DATA_DIR =
+  process.env.VERCEL
+    ? path.join("/tmp", "voice-invoice-data")
+    : path.join(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 
 async function ensureDataDir() {
