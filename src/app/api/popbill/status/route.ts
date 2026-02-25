@@ -53,13 +53,23 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const taxinvoiceService = getPopbill();
-    let certExpireDate: string | null = null;
+    // 환경변수만 있으면 폼 표시 (SDK 초기화 실패 시에도 Vercel 등에서 폼 노출)
+    const hasPopbillKeys = !!(
+      process.env.POPBILL_LINKID?.trim() &&
+      process.env.POPBILL_SECRET_KEY?.trim()
+    );
+    let taxinvoiceService: ReturnType<typeof getPopbill> = null;
+    try {
+      taxinvoiceService = getPopbill();
+    } catch {
+      // SDK 초기화 실패해도 키가 있으면 popbillConfigured: true 로 폼 표시
+    }
 
+    let certExpireDate: string | null = null;
     if (taxinvoiceService && user.corpNum) {
       try {
         certExpireDate = await new Promise<string | null>((resolve) => {
-          taxinvoiceService.getCertificateExpireDate(
+          taxinvoiceService!.getCertificateExpireDate(
             user.corpNum!,
             (date: string) => resolve(date),
             () => resolve(null)
@@ -71,7 +81,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      popbillConfigured: !!taxinvoiceService,
+      popbillConfigured: hasPopbillKeys || !!taxinvoiceService,
       user: {
         id: user.id,
         email: user.email,
