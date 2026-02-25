@@ -25,17 +25,27 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get("auth")?.value;
     if (!token) {
-      return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+      return NextResponse.json(
+        { error: "로그인이 필요합니다.", code: "NO_COOKIE" },
+        { status: 401 }
+      );
     }
 
     const userId = await verifyToken(token);
     if (!userId) {
-      return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+      return NextResponse.json(
+        { error: "로그인이 필요합니다.", code: "INVALID_TOKEN" },
+        { status: 401 }
+      );
     }
 
     const user = await getUserById(userId);
     if (!user) {
-      return NextResponse.json({ error: "사용자를 찾을 수 없습니다." }, { status: 401 });
+      return NextResponse.json(
+        { error: "사용자를 찾을 수 없습니다. (다른 서버 인스턴스에 저장된 계정일 수 있음. 로그아웃 후 재로그인하세요.)",
+          code: "USER_NOT_FOUND" },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();

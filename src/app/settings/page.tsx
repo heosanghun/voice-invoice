@@ -80,10 +80,25 @@ export default function SettingsPage() {
       const data = await res.json().catch(() => ({ error: "응답을 읽을 수 없습니다." }));
       if (!res.ok) {
         const msg = data.error || "등록 실패";
-        if (res.status === 401 && msg.includes("로그인"))
-          throw new Error(
-            "로그인 세션이 없거나 만료되었습니다. 로그아웃 후 다시 로그인한 뒤, 같은 주소(URL)에서 사업자 등록을 시도해 주세요. 프로덕션 주소(voice-invoice-hyo4.vercel.app) 사용을 권장합니다."
-          );
+        const code = data.code;
+        if (res.status === 401) {
+          if (code === "NO_COOKIE")
+            throw new Error(
+              "브라우저에 로그인 쿠키가 없습니다. 같은 주소(voice-invoice-hyo4.vercel.app)에서 로그인한 뒤 다시 시도하세요."
+            );
+          if (code === "INVALID_TOKEN")
+            throw new Error(
+              "로그인 토큰이 만료되었거나 유효하지 않습니다. 로그아웃 후 다시 로그인하세요. (Vercel 환경 변수 AUTH_SECRET 확인)"
+            );
+          if (code === "USER_NOT_FOUND")
+            throw new Error(
+              "저장된 계정을 찾을 수 없습니다. Vercel 서버가 재시작되면 /tmp 데이터가 사라집니다. 로그아웃 후 회원가입부터 다시 하거나, Supabase anon 키를 설정해 DB에 저장하세요."
+            );
+          if (msg.includes("로그인"))
+            throw new Error(
+              "로그인 세션이 없거나 만료되었습니다. 로그아웃 후 같은 주소에서 다시 로그인하세요."
+            );
+        }
         throw new Error(msg);
       }
       setMessage({ type: "success", text: data.message });
